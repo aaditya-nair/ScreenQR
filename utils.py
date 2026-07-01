@@ -4,17 +4,14 @@ import logging
 import re
 from pathlib import Path
 
-# Setup App Data Directory
 APP_NAME = "ScreenQR"
 APP_DIR = Path.home() / f".{APP_NAME.lower()}"
 CONFIG_FILE = APP_DIR / "config.json"
 LOG_FILE = APP_DIR / "app.log"
 HISTORY_FILE = APP_DIR / "history.json"
 
-# Ensure app dir exists
 APP_DIR.mkdir(parents=True, exist_ok=True)
 
-# Configure Logging
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
@@ -35,7 +32,6 @@ def load_config() -> dict:
     try:
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
-            # Merge with default in case of missing keys
             for k, v in DEFAULT_CONFIG.items():
                 if k not in config:
                     config[k] = v
@@ -70,21 +66,18 @@ def save_history(history: list):
 
 def add_to_history(text: str):
     history = load_history()
-    # Remove if it already exists to bring to top
     if text in history:
         history.remove(text)
     history.insert(0, text)
-    # Keep only last 20
     history = history[:20]
     save_history(history)
 
 def is_valid_url(text: str) -> bool:
-    # Basic URL validation regex
     pattern = re.compile(
-        r'^(?:http|ftp)s?://' # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' # optional port
+        r'^(?:http|ftp)s?://'
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
+        r'localhost|'
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
+        r'(?::\d+)?'
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return re.match(pattern, text) is not None

@@ -15,7 +15,6 @@ def capture_screen_region(x: int, y: int, width: int, height: int) -> np.ndarray
             monitor = {"top": y, "left": x, "width": width, "height": height}
             sct_img = sct.grab(monitor)
 
-            # mss returns BGRA (4-channel). Convert to BGR for OpenCV.
             img_bgra = np.array(sct_img, dtype=np.uint8)
             img_bgr = cv2.cvtColor(img_bgra, cv2.COLOR_BGRA2BGR)
 

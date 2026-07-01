@@ -20,9 +20,6 @@ class QRDecoderThread(QThread):
 
             detector = cv2.QRCodeDetector()
 
-            # detectAndDecodeMulti signature:
-            # retval, decoded_info, points, straight_qrcode = detector.detectAndDecodeMulti(img)
-            # In some builds the 4th element may not exist; unpack safely.
             detection = detector.detectAndDecodeMulti(self.image)
 
             retval = detection[0]
@@ -35,7 +32,6 @@ class QRDecoderThread(QThread):
                     if stripped:
                         results.append(stripped)
 
-            # If cv2 QRCodeDetector failed, try pyzbar as an absolute necessity
             if not results:
                 try:
                     from pyzbar.pyzbar import decode

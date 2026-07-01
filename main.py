@@ -16,66 +16,64 @@ class ScreenQRApp(QObject):
         super().__init__()
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
-        
+
         self.config = load_config()
-        
+
         self.overlay = None
         self.decoder_thread = None
-        
+
         self.setup_tray()
-        
+
         self.hotkey_manager = HotkeyManager()
         self.hotkey_manager.trigger_signal.connect(self.show_overlay)
         self.hotkey_manager.quit_signal.connect(self.quit_app)
         self.hotkey_manager.start()
-        
-        self.tray.showMessage("ScreenQR Started", 
-                              f"Scan: {self.hotkey_manager.hotkey_combo} | Quit: {self.hotkey_manager.quit_combo}", 
-                              QSystemTrayIcon.MessageIcon.Information, 
+
+        self.tray.showMessage("ScreenQR Started",
+                              f"Scan: {self.hotkey_manager.hotkey_combo} | Quit: {self.hotkey_manager.quit_combo}",
+                              QSystemTrayIcon.MessageIcon.Information,
                               3000)
 
     def create_icon(self):
-        # Create a simple icon programmatically if none exists
         pixmap = QPixmap(64, 64)
         pixmap.fill(Qt.GlobalColor.transparent)
-        
+
         from PyQt6.QtGui import QPainter, QColor
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
-        # Draw a simple QR-like icon
+
         painter.setBrush(QColor(0, 120, 215))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(4, 4, 24, 24, 4, 4)
         painter.drawRoundedRect(36, 4, 24, 24, 4, 4)
         painter.drawRoundedRect(4, 36, 24, 24, 4, 4)
         painter.drawRoundedRect(40, 40, 16, 16, 2, 2)
-        
+
         painter.end()
         return QIcon(pixmap)
 
     def setup_tray(self):
         self.tray = QSystemTrayIcon()
         self.tray.setIcon(self.create_icon())
-        
+
         self.menu = QMenu()
-        
+
         scan_action = self.menu.addAction("Scan Now")
         scan_action.triggered.connect(self.show_overlay)
-        
+
         history_action = self.menu.addAction("View History")
         history_action.triggered.connect(self.show_history)
-        
+
         self.menu.addSeparator()
-        
+
         auto_copy_action = self.menu.addAction("Auto-Copy (Single QR)")
         auto_copy_action.setCheckable(True)
         auto_copy_action.setChecked(self.config.get("auto_copy", True))
         auto_copy_action.triggered.connect(self.toggle_auto_copy)
-        
+
         quit_action = self.menu.addAction("Quit")
         quit_action.triggered.connect(self.quit_app)
-        
+
         self.tray.setContextMenu(self.menu)
         self.tray.show()
 
@@ -92,7 +90,7 @@ class ScreenQRApp(QObject):
     def show_overlay(self):
         if self.overlay is not None:
             return
-            
+
         self.overlay = OverlayWindow()
         self.overlay.region_selected.connect(self.process_selection)
         self.overlay.cancelled.connect(self.cleanup_overlay)
@@ -101,14 +99,12 @@ class ScreenQRApp(QObject):
     @pyqtSlot(int, int, int, int)
     def process_selection(self, x, y, width, height):
         self.cleanup_overlay()
-        
-        # Capture region
+
         image = capture_screen_region(x, y, width, height)
         if image is None:
             self.show_notification("Capture failed.")
             return
-            
-        # Decode in background
+
         self.decoder_thread = QRDecoderThread(image)
         self.decoder_thread.finished_signal.connect(self.on_decode_finished)
         self.decoder_thread.error_signal.connect(self.on_decode_error)
@@ -125,12 +121,10 @@ class ScreenQRApp(QObject):
         if not results:
             self.show_notification("No QR code detected.")
             return
-            
-        # Show popup
+
         self.popup = PopupDialog(results, self.config)
         self.popup.show()
-        
-        # Save config when popup closes
+
         self.popup.finished.connect(lambda: save_config(self.config))
 
     @pyqtSlot(str)
@@ -151,9 +145,8 @@ class ScreenQRApp(QObject):
 
 if __name__ == "__main__":
     import signal
-    # Allow Ctrl+C to instantly terminate the Qt application
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    
+
     try:
         app = ScreenQRApp()
         sys.exit(app.run())
